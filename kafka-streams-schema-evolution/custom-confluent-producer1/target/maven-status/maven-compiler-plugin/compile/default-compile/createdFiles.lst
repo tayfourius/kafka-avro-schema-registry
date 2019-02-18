@@ -1,0 +1,5 @@
+com\example\Sensor$1.class
+com\example\Sensor$Builder.class
+sample\producer1\Producer1Application.class
+com\example\Sensor.class
+sample\producer1\FooSerde.class
