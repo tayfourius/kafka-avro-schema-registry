@@ -1,0 +1,199 @@
+version: '2'
+
+
+services:
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+        - cloud-network  
+        
+  kafka:
+    build: .
+    ports:
+      - "9092:9092"   
+    hostname: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_RETENTION_HOURS: 438000
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      JMX_PORT: 9999
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cloud-network  
+      
+  kafka-jmx-exporter:
+    build: ./prometheus-jmx-exporter
+    ports:
+      - "8080:8080"
+    links:
+      - kafka
+    environment:
+      - JMX_PORT=9999
+      - JMX_HOST=kafka
+      - HTTP_PORT=8080
+      - JMX_EXPORTER_CONFIG_FILE=kafka.yml
+    networks:
+      - cloud-network        
+ 
+  prometheus:
+    ports:
+      - 9090:9090/tcp
+    image: prom/prometheus:0.18.0
+    volumes:
+      - C:/Projects/Kafka/kafka-docker-master/mount/prometheus:/etc/prometheus
+    links:
+      - kafka-jmx-exporter
+    networks:
+      - cloud-network
+      
+  grafana:
+    image: grafana/grafana:3.0.1
+    ports:
+      - 3000:3000/tcp
+    links:
+      - prometheus
+    volumes:
+      - "graf-db:/var/lib/grafana"
+    networks:
+      - cloud-network
+      
+  graf-db:
+    command:
+      - cat
+    image: infinityworks/graf-db:08
+    links:
+      - prometheus
+    volumes:
+      - "graf-db:/var/lib/grafana/"           
+    networks:
+      - cloud-network  
+      
+  schema-registry:
+    image: confluentinc/cp-schema-registry:4.1.2
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "8081:8081"
+    networks:
+        - cloud-network  
+    hostname: schema-registry
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+      
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:4.1.2
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 8082:8082
+    networks:
+        - cloud-network
+    hostname: rest-proxy
+    container_name: kafka-rest-proxy
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: '192.168.99.100:9092'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      
+  kafdrop:
+    image: thomsch98/kafdrop:latest
+    container_name: kafdrop
+    hostname: kafdrop
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "9010:9010"
+    environment:
+      - "ZK_HOSTS=zookeeper:2181"
+      - "LISTEN=9010"
+    networks:
+    - cloud-network
+    
+  schema-registry-ui:
+    image: landoop/schema-registry-ui:latest
+    hostname: kafka-schema-registry-ui
+    ports:
+      - "8001:8000"
+    environment:
+      SCHEMAREGISTRY_URL: 'http://schema-registry:8081'
+      PROXY: "true"
+    depends_on:
+      - schema-registry
+    networks:
+      - cloud-network
+      
+  kafka-topics-ui:
+    image: landoop/kafka-topics-ui:latest
+    hostname: kafka-topics-ui
+    ports:
+      - "8002:8000"
+    environment:
+      KAFKA_REST_PROXY_URL: "http://rest-proxy:8082/"
+      PROXY: "true"
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+      - rest-proxy   
+    networks:
+    - cloud-network
+    
+  zoonavigator-web:
+    image: elkozmon/zoonavigator-web:0.5.1
+    ports:
+     - "8003:8000"
+    environment:
+      API_HOST: "zoonavigator-api"
+      API_PORT: 9000
+    links:
+     - zoonavigator-api
+    depends_on:
+     - zoonavigator-api
+    networks:
+    - cloud-network 
+
+  zoonavigator-api:
+    image: elkozmon/zoonavigator-api:0.5.1
+    environment:
+      SERVER_HTTP_PORT: 9000
+    depends_on:
+      - zookeeper  
+    networks:
+    - cloud-network  
+    
+  kafka-manager:
+    image: sheepkiller/kafka-manager:latest
+    ports:
+      - "9001:9000"
+    links:
+      - zookeeper
+      - kafka
+    environment:
+      ZK_HOSTS: zookeeper:2181
+      APPLICATION_SECRET: letmein
+      KM_ARGS: -Djava.net.preferIPv4Stack=true    
+    networks:
+    - cloud-network    
+
+volumes:
+  graf-db:
+  
+networks:
+    cloud-network:
+        driver: bridge
+            
