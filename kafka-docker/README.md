@@ -60,6 +60,9 @@ Destroy a cluster:
 
 - ```docker-compose stop```
 
+Start full stack kafka cluster: 
+- ```docker-compose -f full-stack.yml up -d ```
+
 ## Note
 
 The default ```docker-compose.yml``` should be seen as a starting point. By default each broker will get a new port number and broker id on restart. Depending on your use case this might not be desirable. If you need to use specific ports and broker ids, modify the docker-compose configuration accordingly, e.g. [docker-compose-single-broker.yml](https://github.com/wurstmeister/kafka-docker/blob/master/docker-compose-single-broker.yml):
