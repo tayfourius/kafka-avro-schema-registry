@@ -3,11 +3,9 @@ spring.application.name: kafka-streams-confluent-consumer
 spring.cloud.stream.bindings.output:
     destination: sensor-versions
 spring.cloud.stream.bindings.input:
-    destination: sensors
-    consumer:
-      useNativeDecoding: true
+    destination: sensor-topic-1
 spring.cloud.stream.kafka.streams.binder:
-    brokers: localhost
+    brokers: 192.168.99.100:9092
     configuration:
       schema.registry.url: http://192.168.99.100:8081
       commit.interval.ms: 1000
@@ -19,3 +17,9 @@ spring.cloud.stream.kafka.streams.bindings.input:
   # Adding it here in order to illustrate the usage of it if they are indeed different from the global Serde's
     keySerde: org.apache.kafka.common.serialization.Serdes$StringSerde
     valueSerde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+spring:
+  cloud:
+    bus:
+      enabled: true
+    stream:
+      schemaRegistryClient.endpoint: http://192.168.99.100:8081

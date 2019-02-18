@@ -50,7 +50,7 @@ public class CountVersionApplication {
 	public KStream<String, Long> process(KStream<Object, Sensor> input) {
 
 		final Map<String, String> serdeConfig = Collections.singletonMap(
-				AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+				AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://192.168.99.100:8081");
 
 		final SpecificAvroSerde<Sensor> sensorSerde = new SpecificAvroSerde<>();
 		sensorSerde.configure(serdeConfig, false);

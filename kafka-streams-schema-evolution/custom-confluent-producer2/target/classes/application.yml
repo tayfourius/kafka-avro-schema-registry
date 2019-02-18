@@ -1,13 +1,26 @@
+server:
+  port: 9011
 spring:
   cloud:
+    bus:
+      enabled: true
     stream:
+      schemaRegistryClient.endpoint: http://192.168.99.100:8081
       bindings:
         output:
-          producer:
-            useNativeEncoding: true
-          destination: sensors
-server.port: 9010
-spring.cloud.stream.kafka.binder.configuration:
-  schema.registry.url: http://localhost:8081
-  key.serializer: org.apache.kafka.common.serialization.ByteArraySerializer
-  value.serializer: sample.producer2.FooSerde
+          #producer:
+            #useNativeEncoding: true
+          destination: sensor-topic-1
+          contentType: application/*+avro
+      kafka:
+        binder:
+          brokers: 192.168.99.100:9092
+        stream:
+          binder:
+            brokers: 192.168.99.100:9092
+            configuration:
+              schema.registry.url: http://192.168.99.100:8081
+              key.serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+              value.serializer: sample.producer2.FooSerde
+
+

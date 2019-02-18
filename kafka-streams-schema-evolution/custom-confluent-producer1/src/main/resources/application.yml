@@ -2,12 +2,19 @@ server:
   port: 9009
 spring:
   cloud:
+    bus:
+      enabled: true
     stream:
+      schemaRegistryClient.endpoint: http://192.168.99.100:8081
+      #schema:
+        #avro:
+          #schema-locations: classpath:avro/sensor.avsc
       bindings:
         output:
           #producer:
             #useNativeEncoding: true
-          destination: sensorsx1
+          destination: sensor-topic-1
+          contentType: application/*+avro
       kafka:
         binder:
           brokers: 192.168.99.100:9092
